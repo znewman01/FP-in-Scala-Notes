@@ -1,0 +1,274 @@
+Functional Programming Basics
+in Scala
+
+Zack Newman
+ADICU
+
+
+What is functional programming?
+  Brief history
+    Alan Turing, 1930s, Turing Machine
+      Theoretical device, manipulates symbols on tapes
+      Capable of any processing your laptop can do
+    Alonzo Church, 1930s, Lambda Calculus
+      Formal system, based on functions/recursion
+      Statements look something like "Y = \lambda f . (\lambda x . f (x x)) (\lambda x . f (x x))"
+      Turns out to be just as powerful as the Turing Machine
+  Functional programming inspired by lambda calculus
+    Basic ideas (according to Wikipedia):
+      "treats computation as the evaluation of mathematical functions"
+        Maps inputs to outputs
+      "avoids state and mutable data"
+        /referential transparency/: every function has the same result with the same input every time
+        no 'side effects'
+
+Purity
+  So if I can't have side effects, what can my program do?
+  NOTHING-no I/O, no printing, no networking, no memory persistence, etc.
+  No "functional programming" is 100% pure
+  "Purity" essentially refers to how strictly programs adhere to FP ideals
+  Pure functional languages: OCaml, Haskell
+  Some people get really worked up about purity, but that's not the point of this workshop
+
+Why FP?
+  It's popular in academia (theoretically interesting)
+  More compelling (relevant) reasons:
+    Easy parallelization
+    Provable correctness
+    Easier debugging/testing
+    Modularity
+
+Why not FP?
+  Lack of real world support (no libraries/community) (network effects)
+  Hence: Scala
+
+Scala
+  Multi-paradigm language
+    Functional, imperative, object-oriented
+  Runs on JVM
+    Can use Java libraries
+  Interpreted, compiled, or interactive
+
+Hello world
+  Compare Java and Scala
+  Scala is
+    more script-like, less app-like (though it supports app-like mode)
+    no semicolons--inferred
+    no "System.out"--Scala eschews needless verbosity
+    command line args are still accessible
+
+Static (but inferred) typing
+  > var answer = 42
+  var answer: Int = 42
+  > var answer = 42.0
+  var answer: Double = 42.0
+  > var x = new HashMap[Int, String]() // import scala.collection.immutable.HashMap
+  var x: HashMap[Int, String] = new HashMap[Int, String]()
+  // Scala eschews needless verbosity
+
+vals? vars?
+  What's the difference? Mutability
+  vals are immutable
+  > var a = 3
+  > a = 2 // ok
+  > val b = 3
+  > b = 2 // bad
+  Returning to our functional principles, which one is more functional?
+
+Putting the "function" in "functional"
+  > def max(x: Int, y: Int): Int = {
+  |   if (x > y) x
+  |   else y
+  | }
+  What do we notice?
+    Type of function arguments MUST be stated explicitly
+    Return type of function not strictly necessary, but good practice
+    Curly braces around body (not necessary)
+    No return statement - returns last value
+    If/else is an expression, has value (like Java's ternary operator)
+  How does this fit in with functional paradigm?
+
+Arrays
+  > val numbers = new Array[Int](3)
+  > numbers(0) = 0
+  > numbers(1) = 2
+  > numbers(2) = 45
+  > // Same thing
+  > val numbers2 = Array(0, 2, 45)
+  > // Make some output
+  > println(numbers(0))
+  > println(numbers.length)
+  Though numbers is a val, we can change it
+  That's nice, but can we do more functional?
+
+Lists
+  > // better--immutable
+  > val numbers = List(0, 2, 45)
+  > // concatenation
+  > val numbers2 = List(1, 3, 46)
+  > val numbers3 = numbers ::: numbers2
+  > // numbers3 = List(0, 2, 45, 1, 3, 46)
+  > // cons
+  > val temp = List(2, 45)
+  > val numbers2 = 0 :: temp
+  > val numbers2 = 0 :: 2 :: 45 :: Nil
+  > // cons and reverse
+  > numbers2.reverse
+  > // bad!
+  > numbers(0) = 3
+
+Looping
+  Scala offers whiles, do whiles, but those are less functional
+    Be suspicious
+  Prefer: fors, recursion, more elegant solutions
+  for loops
+    > for(i <- 0 to 5)
+    |   println(i)
+    > // to iterate over array/list
+    > for(i <- 0 until numbers.length)
+    |   println(numbers(i))
+    > // but wait! there's more (lists or arrays)
+    > for(num <- numbers)
+    |   println(num)
+    > // even better-more on this later
+    > numbers.foreach(println)
+
+GCD
+  compare imperative, functional
+  Why is imperative "bad"? (i.e. nonfunctional)
+  Functional: so elegant
+    Won't it blow up stack? Nope! Tail-call optimization
+    Doesn't fix other problems with recursion (i.e. memoization)
+
+First-class functions: foreach
+  > nums.foreach(println)
+  How can we do this? First-class functions
+  > def exclaim(x: String) =
+  |   println(x + “!”)
+  > val interjections =
+  |   List(“Hip”, “Hip”, “Hooray”)
+  > interjections.foreach(exclaim)
+
+First-class functions: filter
+  > // find even elements of a list
+  > val nums = List(1, 2, 3, 4, 5, 6)
+  > def even(x: Int): Boolean = x % 2 == 0
+  > nums.filter(even)
+  > // no need to define even
+  > // anonymous functions
+  > nums.filter((x: Int) => x % 2 == 0)
+  > nums.filter(x => x % 2 == 0)
+  > nums.filter(_ % 2 == 0)
+
+First-class functions: functions that return functions
+// say we need to do a lot of divisibility testing
+// we can have a function that makes functions!
+  > def divisibleBy(n: Int): (Int => Boolean) =
+  |   (x: Int) => x % n == 0
+  > numbers.filter(divisibleBy(2))
+  > // where does the 2 go? “closure”
+
+Scoping in Scala
+  > val a = 0
+  > println(a); // 0
+  > {
+  >   val a = 1
+  >   println(a) // 1
+  > }
+  > println(a) // 0
+  > // pretty self-explanatory
+  > // closure
+  > var b = 0
+  > def printb = println(b)
+  > printb // 0
+  > b = 1
+  > printb // 1
+
+Practical: dealing with side effects
+  > // bad -- hard to test
+  > def addOneToEachAndPrint(nums: List[Int]) =
+  |   for (x <- nums)
+  |     println(x + 1)
+  > // better
+  > def addOneToEach(nums: List[Int]): List[Int] =
+  |   for(x <- nums)
+  |     yield x + 1
+  > def addOneToEachAndPrint(nums: List[Int]) =
+  |   addOneToEach(nums).foreach(println)
+  > // also better
+  > def addOneToEach(nums: List[Int]): List[Int] =
+  |   nums.map(x => x + 1)
+  > def addOneToEachAndPrint(nums: List[Int]) =
+  |   addOneToEach(nums).foreach(println)
+  > // also better
+  > def addOneToEachAndFormat(nums: List[Int]): String =
+  |   nums.map(x => x + 1).mkString("\n")
+  > def addOneToEachAndPrint(nums: List[Int]) =
+  |   println(addOneToEachAndFormat(nums))
+
+Super-trendy buzzword technology time! MapReduce
+  So say you need to do a lot of computation really quickly
+  You can buy faster and faster computers
+    increments in computing speed are marginal
+  Or you can get a bunch of computers and distribute the problem
+  This is what Google does.
+    They introduced their MapReduce framework
+    (which is similar to ideas that had been around for a while) in 2004
+
+MapReduce: example
+  Problem: counting number of times a word appears in multiple documents
+  Iterative approach:
+    Make a table to store the number of times each word appears
+    Go through docs one by one, update table for each word
+  This is tough to distribute.
+    Multiple computers accessing same table at same time over same network
+    = recipe for disaster
+  Solution: use MapReduce/functional programming
+  Map step: take document
+    result is list of words/counts
+  Reduce step: take list of counts for each word
+    result is the total count for that word
+  Essentially breaking up into subproblems
+    in a way that is very parallelizable
+
+MapReduce example: code
+  > val doc1 = "hello world hello"
+  > val doc2 = "world wide web" 
+  Map
+    Takes a document, result is a list of words with counts
+    > def map(doc: String): List[Tuple2[String, Int]] =
+    |   doc.split(“ “).toList.map((_, 1))
+    > map(doc1) => List((“hello”, 1), (“world”, 1), (“hello”, 1))
+    > map(doc2) => List((“world”, 1), (“wide”, 1), (“web”, 1))
+  Reduce
+    MapReduce framework
+      will take the results of map
+      give them to reduce sorted nicely
+  Takes a word, list of counts, result is total count
+  > def reduce(word: String, counts: List[Int]): Int =
+  |   counts.sum
+  doc1:
+    reduce(“hello”, List(1, 1)) => 2
+    reduce(“world”, List(1)) => 1
+  doc2:
+    reduce(“world”, List(1)) => 1
+    reduce(“wide”, List(1)) => 1
+    reduce(“web”, List(1))
+  Final round of reduce:
+    reduce(“hello”, List(2)) => 2
+    reduce(“world” List(1, 1)) => 2
+    reduce(“wide”, List(1)) => 1
+    reduce(“web”, List(1)) => 1
+  Result: [(“hello”, 2), (“world”, 2), (“wide”, 1), (“web”, 1)
+
+http://experthuman.com/programming-with-nothing
+http://labs.google.com/papers/mapreduce-osdi04.pdf
+http://gleichmann.wordpress.com/2010/10/28/functional-scala-introduction/
+http://en.wikipedia.org/wiki/Functional_Programming
+Other articles on Wikipedia (Lambda Calculus, MapReduce, etc.)
+Programming in Scala, by Odersky, Spoon, and Venners (first edition available online)
+
+TODO: more on reversing lists
+      tail call optimization
+      is non-tail recursion kosher?
+
